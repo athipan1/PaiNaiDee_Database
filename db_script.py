@@ -24,10 +24,10 @@ Base = declarative_base()
 # สร้าง SessionLocal สำหรับการจัดการ session ฐานข้อมูล
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# --- SQLAlchemy Models ตาม ER Diagram ---
+# --- SQLAlchemy Models ตาม ER Diagram (ปรับปรุงชื่อตารางให้ตรงกับ Schema ของคุณ) ---
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "User" # เปลี่ยนจาก "users" เป็น "User"
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
@@ -39,7 +39,7 @@ class User(Base):
     favorites = relationship("Favorite", back_populates="user")
 
 class Category(Base):
-    __tablename__ = "categories"
+    __tablename__ = "Category" # เปลี่ยนจาก "categories" เป็น "Category"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
     description = Column(Text)
@@ -48,14 +48,14 @@ class Category(Base):
     attractions = relationship("Attraction", back_populates="category_obj")
 
 class Tag(Base):
-    __tablename__ = "tags"
+    __tablename__ = "Tag" # เปลี่ยนจาก "tags" เป็น "Tag"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
 
     attraction_tags = relationship("AttractionTag", back_populates="tag")
 
 class Attraction(Base):
-    __tablename__ = "attractions"
+    __tablename__ = "attractions" # ชื่อนี้ตรงกับ schema ของคุณแล้ว
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False, unique=True)
     description = Column(Text)
@@ -64,7 +64,7 @@ class Attraction(Base):
     district = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)
-    category_id = Column(Integer, ForeignKey("categories.id")) # FK to Categories
+    category_id = Column(Integer, ForeignKey("Category.id")) # อัปเดต FK
     opening_hours = Column(String)
     entrance_fee = Column(String)
     contact_phone = Column(String)
@@ -78,19 +78,19 @@ class Attraction(Base):
     attraction_tags = relationship("AttractionTag", back_populates="attraction")
 
 class Image(Base):
-    __tablename__ = "images"
+    __tablename__ = "Image" # เปลี่ยนจาก "images" เป็น "Image"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
+    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False) # ชื่อตาราง "attractions" ตรงแล้ว
     image_url = Column(String, nullable=False)
     caption = Column(String)
 
     attraction = relationship("Attraction", back_populates="images")
 
 class Review(Base):
-    __tablename__ = "reviews"
+    __tablename__ = "Review" # เปลี่ยนจาก "reviews" เป็น "Review"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False) # ชื่อตาราง "attractions" ตรงแล้ว
+    user_id = Column(Integer, ForeignKey("User.id"), nullable=False) # อัปเดต FK
     rating = Column(Integer, nullable=False) # เช่น 1-5 ดาว
     comment = Column(Text)
     created_at = Column(DateTime, server_default=func.now())
@@ -99,10 +99,10 @@ class Review(Base):
     user = relationship("User", back_populates="reviews")
 
 class Favorite(Base):
-    __tablename__ = "favorites"
+    __tablename__ = "Favorite" # เปลี่ยนจาก "favorites" เป็น "Favorite"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.id"), nullable=False) # อัปเดต FK
+    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False) # ชื่อตาราง "attractions" ตรงแล้ว
 
     __table_args__ = (UniqueConstraint('user_id', 'attraction_id', name='_user_attraction_uc'),) # ป้องกันการบันทึกรายการโปรดซ้ำ
 
@@ -110,9 +110,9 @@ class Favorite(Base):
     attraction = relationship("Attraction", back_populates="favorites")
 
 class AttractionTag(Base):
-    __tablename__ = "attraction_tags"
-    attraction_id = Column(Integer, ForeignKey("attractions.id"), primary_key=True)
-    tag_id = Column(Integer, ForeignKey("tags.id"), primary_key=True)
+    __tablename__ = "attraction_tags" # ชื่อนี้ตรงกับ schema ของคุณแล้ว
+    attraction_id = Column(Integer, ForeignKey("attractions.id"), primary_key=True) # ชื่อตาราง "attractions" ตรงแล้ว
+    tag_id = Column(Integer, ForeignKey("Tag.id"), primary_key=True) # อัปเดต FK
 
     __table_args__ = (UniqueConstraint('attraction_id', 'tag_id', name='_attraction_tag_uc'),) # ป้องกันแท็กซ้ำสำหรับสถานที่เดียวกัน
 
@@ -147,7 +147,7 @@ def fetch_data_from_api(api_url):
 # --- ฟังก์ชันสำหรับบันทึกข้อมูลลงฐานข้อมูล ---
 
 def save_users_to_db(users_data):
-    """บันทึกข้อมูลผู้ใช้ลงในตาราง USERS"""
+    """บันทึกข้อมูลผู้ใช้ลงในตาราง User"""
     session = SessionLocal()
     saved_count = 0
     skipped_count = 0
@@ -193,7 +193,7 @@ def save_users_to_db(users_data):
     return user_ids
 
 def save_categories_and_tags_to_db(categories_list, tags_list):
-    """บันทึกข้อมูลหมวดหมู่และแท็กลงในตาราง CATEGORIES และ TAGS"""
+    """บันทึกข้อมูลหมวดหมู่และแท็กลงในตาราง Category และ Tag"""
     session = SessionLocal()
     saved_categories_count = 0
     saved_tags_count = 0
@@ -239,7 +239,7 @@ def save_categories_and_tags_to_db(categories_list, tags_list):
     return category_ids, tag_ids
 
 def save_attractions_and_related_data(attractions_data, all_user_ids, all_category_ids, all_tag_ids):
-    """บันทึกข้อมูลสถานที่และข้อมูลที่เกี่ยวข้อง (Images, Reviews, AttractionTags, Favorites)"""
+    """บันทึกข้อมูลสถานที่และข้อมูลที่เกี่ยวข้อง (Image, Review, AttractionTag, Favorite)"""
     session = SessionLocal()
     saved_attractions_count = 0
     skipped_attractions_count = 0
@@ -347,25 +347,25 @@ def get_and_display_data():
     """ดึงและแสดงข้อมูลจากทุกตารางเพื่อตรวจสอบ"""
     session = SessionLocal()
     try:
-        print("\n--- ข้อมูลจากตาราง USERS ---")
+        print("\n--- ข้อมูลจากตาราง User ---")
         users = session.query(User).all()
         for user in users:
             print(f"ID: {user.id}, Username: {user.username}, Email: {user.email}, Role: {user.role}")
         if not users: print("ไม่มีข้อมูลผู้ใช้")
 
-        print("\n--- ข้อมูลจากตาราง CATEGORIES ---")
+        print("\n--- ข้อมูลจากตาราง Category ---")
         categories = session.query(Category).all()
         for cat in categories:
             print(f"ID: {cat.id}, Name: {cat.name}, Description: {cat.description}")
         if not categories: print("ไม่มีข้อมูลหมวดหมู่")
 
-        print("\n--- ข้อมูลจากตาราง TAGS ---")
+        print("\n--- ข้อมูลจากตาราง Tag ---")
         tags = session.query(Tag).all()
         for tag in tags:
             print(f"ID: {tag.id}, Name: {tag.name}")
         if not tags: print("ไม่มีข้อมูลแท็ก")
 
-        print("\n--- ข้อมูลจากตาราง ATTRACTIONS ---")
+        print("\n--- ข้อมูลจากตาราง attractions ---")
         attractions = session.query(Attraction).all()
         for attr in attractions:
             category_name = attr.category_obj.name if attr.category_obj else "N/A"
@@ -377,26 +377,26 @@ def get_and_display_data():
                   f"แท็ก: [{tags_names}]")
         if not attractions: print("ไม่มีข้อมูลสถานที่ท่องเที่ยว")
 
-        print("\n--- ข้อมูลจากตาราง IMAGES ---")
+        print("\n--- ข้อมูลจากตาราง Image ---")
         images = session.query(Image).all()
         for img in images:
             print(f"ID: {img.id}, Attraction ID: {img.attraction_id}, URL: {img.image_url}, Caption: {img.caption}")
         if not images: print("ไม่มีข้อมูลรูปภาพ")
 
-        print("\n--- ข้อมูลจากตาราง REVIEWS ---")
+        print("\n--- ข้อมูลจากตาราง Review ---")
         reviews = session.query(Review).all()
         for rev in reviews:
             print(f"ID: {rev.id}, Attraction ID: {rev.attraction_id}, User ID: {rev.user_id}, "
                   f"Rating: {rev.rating}, Comment: {rev.comment[:50]}..., Created: {rev.created_at}")
         if not reviews: print("ไม่มีข้อมูลรีวิว")
 
-        print("\n--- ข้อมูลจากตาราง FAVORITES ---")
+        print("\n--- ข้อมูลจากตาราง Favorite ---")
         favorites = session.query(Favorite).all()
         for fav in favorites:
             print(f"ID: {fav.id}, User ID: {fav.user_id}, Attraction ID: {fav.attraction_id}")
         if not favorites: print("ไม่มีข้อมูลรายการโปรด")
 
-        print("\n--- ข้อมูลจากตาราง ATTRACTION_TAGS ---")
+        print("\n--- ข้อมูลจากตาราง attraction_tags ---")
         attraction_tags = session.query(AttractionTag).all()
         for at in attraction_tags:
             print(f"Attraction ID: {at.attraction_id}, Tag ID: {at.tag_id}")
@@ -461,6 +461,10 @@ if __name__ == "__main__":
         save_attractions_and_related_data(mock_attractions_data, all_user_ids, category_name_to_id, tag_name_to_id)
     else:
         print("ไม่สามารถบันทึกข้อมูลสถานที่ได้: ข้อมูลไม่ครบถ้วน (สถานที่, ผู้ใช้, หมวดหมู่, แท็ก)")
+
+    # 5. ดึงและแสดงข้อมูลทั้งหมดจากฐานข้อมูลเพื่อตรวจสอบ
+    get_and_display_data()
+สถานที่ได้: ข้อมูลไม่ครบถ้วน (สถานที่, ผู้ใช้, หมวดหมู่, แท็ก)")
 
     # 5. ดึงและแสดงข้อมูลทั้งหมดจากฐานข้อมูลเพื่อตรวจสอบ
     get_and_display_data()
