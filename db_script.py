@@ -1,7 +1,7 @@
 import requests
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, DateTime, ForeignKey, UniqueConstraint
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+# แก้ไข: เปลี่ยนการ import declarative_base ให้ถูกต้องสำหรับ SQLAlchemy 2.0+
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from sqlalchemy.sql import func # สำหรับ TIMESTAMP
 import random
 import datetime # สำหรับสร้างวันที่/เวลาจำลอง
@@ -24,11 +24,11 @@ Base = declarative_base()
 # สร้าง SessionLocal สำหรับการจัดการ session ฐานข้อมูล
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# --- SQLAlchemy Models ตาม ER Diagram (ปรับปรุงชื่อตารางให้ตรงกับ Schema ของคุณ) ---
+# --- SQLAlchemy Models ตาม ER Diagram (ปรับปรุงชื่อตารางและ PK ให้ตรงกับ Schema ของคุณ) ---
 
 class User(Base):
     __tablename__ = "User" # เปลี่ยนจาก "users" เป็น "User"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, primary_key=True, autoincrement=True) # แก้ไข: เปลี่ยน 'id' เป็น 'user_id'
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
@@ -40,7 +40,7 @@ class User(Base):
 
 class Category(Base):
     __tablename__ = "Category" # เปลี่ยนจาก "categories" เป็น "Category"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    category_id = Column(Integer, primary_key=True, autoincrement=True) # แก้ไข: เปลี่ยน 'id' เป็น 'category_id'
     name = Column(String, unique=True, nullable=False)
     description = Column(Text)
     icon_url = Column(String)
@@ -49,14 +49,14 @@ class Category(Base):
 
 class Tag(Base):
     __tablename__ = "Tag" # เปลี่ยนจาก "tags" เป็น "Tag"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    tag_id = Column(Integer, primary_key=True, autoincrement=True) # แก้ไข: เปลี่ยน 'id' เป็น 'tag_id'
     name = Column(String, unique=True, nullable=False)
 
     attraction_tags = relationship("AttractionTag", back_populates="tag")
 
 class Attraction(Base):
     __tablename__ = "attractions" # ชื่อนี้ตรงกับ schema ของคุณแล้ว
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True) # รักษานามสกุล 'id' เนื่องจาก schema แสดง 'attractions_id_seq'
     name = Column(String, nullable=False, unique=True)
     description = Column(Text)
     address = Column(String)
@@ -64,7 +64,7 @@ class Attraction(Base):
     district = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)
-    category_id = Column(Integer, ForeignKey("Category.id")) # อัปเดต FK
+    category_id = Column(Integer, ForeignKey("Category.category_id")) # อัปเดต FK ให้ชี้ไปที่ 'Category.category_id'
     opening_hours = Column(String)
     entrance_fee = Column(String)
     contact_phone = Column(String)
@@ -79,7 +79,7 @@ class Attraction(Base):
 
 class Image(Base):
     __tablename__ = "Image" # เปลี่ยนจาก "images" เป็น "Image"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True) # รักษานามสกุล 'id' เนื่องจาก schema แสดง 'Image_image_id_seq'
     attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False) # ชื่อตาราง "attractions" ตรงแล้ว
     image_url = Column(String, nullable=False)
     caption = Column(String)
@@ -88,9 +88,9 @@ class Image(Base):
 
 class Review(Base):
     __tablename__ = "Review" # เปลี่ยนจาก "reviews" เป็น "Review"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True) # รักษานามสกุล 'id' เนื่องจาก schema แสดง 'Review_review_id_seq'
     attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False) # ชื่อตาราง "attractions" ตรงแล้ว
-    user_id = Column(Integer, ForeignKey("User.id"), nullable=False) # อัปเดต FK
+    user_id = Column(Integer, ForeignKey("User.user_id"), nullable=False) # อัปเดต FK ให้ชี้ไปที่ 'User.user_id'
     rating = Column(Integer, nullable=False) # เช่น 1-5 ดาว
     comment = Column(Text)
     created_at = Column(DateTime, server_default=func.now())
@@ -100,8 +100,8 @@ class Review(Base):
 
 class Favorite(Base):
     __tablename__ = "Favorite" # เปลี่ยนจาก "favorites" เป็น "Favorite"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("User.id"), nullable=False) # อัปเดต FK
+    id = Column(Integer, primary_key=True, autoincrement=True) # รักษานามสกุล 'id' เนื่องจาก schema แสดง 'Favorite_favorite_id_seq'
+    user_id = Column(Integer, ForeignKey("User.user_id"), nullable=False) # อัปเดต FK ให้ชี้ไปที่ 'User.user_id'
     attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False) # ชื่อตาราง "attractions" ตรงแล้ว
 
     __table_args__ = (UniqueConstraint('user_id', 'attraction_id', name='_user_attraction_uc'),) # ป้องกันการบันทึกรายการโปรดซ้ำ
@@ -112,7 +112,7 @@ class Favorite(Base):
 class AttractionTag(Base):
     __tablename__ = "attraction_tags" # ชื่อนี้ตรงกับ schema ของคุณแล้ว
     attraction_id = Column(Integer, ForeignKey("attractions.id"), primary_key=True) # ชื่อตาราง "attractions" ตรงแล้ว
-    tag_id = Column(Integer, ForeignKey("Tag.id"), primary_key=True) # อัปเดต FK
+    tag_id = Column(Integer, ForeignKey("Tag.tag_id"), primary_key=True) # อัปเดต FK ให้ชี้ไปที่ 'Tag.tag_id'
 
     __table_args__ = (UniqueConstraint('attraction_id', 'tag_id', name='_attraction_tag_uc'),) # ป้องกันแท็กซ้ำสำหรับสถานที่เดียวกัน
 
@@ -120,6 +120,9 @@ class AttractionTag(Base):
     tag = relationship("Tag", back_populates="attraction_tags")
 
 # สร้างตารางทั้งหมดในฐานข้อมูล (ถ้ายังไม่มี)
+# หมายเหตุ: หากตารางมีอยู่แล้วและมีข้อมูลอยู่แล้ว การรัน create_all() จะไม่สร้างตารางซ้ำ
+# แต่หากมีการเปลี่ยนชื่อคอลัมน์ PK (เช่น id -> user_id) และคุณต้องการให้ SQLAlchemy สร้างตารางใหม่
+# คุณอาจต้องลบตารางเก่าใน DB ก่อน หรือใช้ migration tool เช่น Alembic
 Base.metadata.create_all(bind=engine)
 
 # --- ฟังก์ชันสำหรับดึงข้อมูลจาก API ---
@@ -161,11 +164,12 @@ def save_users_to_db(users_data):
                 skipped_count += 1
                 continue
 
+            # แก้ไข: ค้นหาด้วย user_id แทน id
             existing_user = session.query(User).filter((User.username == username) | (User.email == email)).first()
             if existing_user:
                 print(f"ข้ามผู้ใช้ '{username}' หรือ '{email}' เนื่องจากมีอยู่ในฐานข้อมูลแล้ว")
                 skipped_count += 1
-                user_ids.append(existing_user.id) # เพิ่ม ID ของผู้ใช้ที่มีอยู่แล้ว
+                user_ids.append(existing_user.user_id) # แก้ไข: ใช้ user_id
                 continue
 
             # สร้างรหัสผ่านจำลองและ hash
@@ -181,7 +185,7 @@ def save_users_to_db(users_data):
             )
             session.add(user)
             session.flush() # เพื่อให้ได้ ID ของ user ก่อน commit
-            user_ids.append(user.id)
+            user_ids.append(user.user_id) # แก้ไข: ใช้ user_id
             saved_count += 1
         session.commit()
         print(f"บันทึกผู้ใช้สำเร็จ! บันทึกไป {saved_count} รายการ, ข้ามไป {skipped_count} รายการ")
@@ -202,6 +206,7 @@ def save_categories_and_tags_to_db(categories_list, tags_list):
     try:
         # บันทึก Categories
         for cat_name in categories_list:
+            # แก้ไข: ค้นหาด้วย category_id แทน id
             existing_cat = session.query(Category).filter_by(name=cat_name).first()
             if not existing_cat:
                 category = Category(
@@ -211,22 +216,23 @@ def save_categories_and_tags_to_db(categories_list, tags_list):
                 )
                 session.add(category)
                 session.flush()
-                category_ids[cat_name] = category.id
+                category_ids[cat_name] = category.category_id # แก้ไข: ใช้ category_id
                 saved_categories_count += 1
             else:
-                category_ids[cat_name] = existing_cat.id
+                category_ids[cat_name] = existing_cat.category_id # แก้ไข: ใช้ category_id
 
         # บันทึก Tags
         for tag_name in tags_list:
+            # แก้ไข: ค้นหาด้วย tag_id แทน id
             existing_tag = session.query(Tag).filter_by(name=tag_name).first()
             if not existing_tag:
                 tag = Tag(name=tag_name)
                 session.add(tag)
                 session.flush()
-                tag_ids[tag_name] = tag.id
+                tag_ids[tag_name] = tag.tag_id # แก้ไข: ใช้ tag_id
                 saved_tags_count += 1
             else:
-                tag_ids[tag_name] = existing_tag.id
+                tag_ids[tag_name] = existing_tag.tag_id # แก้ไข: ใช้ tag_id
 
         session.commit()
         print(f"บันทึกหมวดหมู่สำเร็จ: {saved_categories_count} รายการ")
@@ -350,19 +356,19 @@ def get_and_display_data():
         print("\n--- ข้อมูลจากตาราง User ---")
         users = session.query(User).all()
         for user in users:
-            print(f"ID: {user.id}, Username: {user.username}, Email: {user.email}, Role: {user.role}")
+            print(f"ID: {user.user_id}, Username: {user.username}, Email: {user.email}, Role: {user.role}") # แก้ไข: ใช้ user_id
         if not users: print("ไม่มีข้อมูลผู้ใช้")
 
         print("\n--- ข้อมูลจากตาราง Category ---")
         categories = session.query(Category).all()
         for cat in categories:
-            print(f"ID: {cat.id}, Name: {cat.name}, Description: {cat.description}")
+            print(f"ID: {cat.category_id}, Name: {cat.name}, Description: {cat.description}") # แก้ไข: ใช้ category_id
         if not categories: print("ไม่มีข้อมูลหมวดหมู่")
 
         print("\n--- ข้อมูลจากตาราง Tag ---")
         tags = session.query(Tag).all()
         for tag in tags:
-            print(f"ID: {tag.id}, Name: {tag.name}")
+            print(f"ID: {tag.tag_id}, Name: {tag.name}") # แก้ไข: ใช้ tag_id
         if not tags: print("ไม่มีข้อมูลแท็ก")
 
         print("\n--- ข้อมูลจากตาราง attractions ---")
@@ -464,4 +470,3 @@ if __name__ == "__main__":
 
     # 5. ดึงและแสดงข้อมูลทั้งหมดจากฐานข้อมูลเพื่อตรวจสอบ
     get_and_display_data()
-
