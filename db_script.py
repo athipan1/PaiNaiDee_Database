@@ -121,8 +121,10 @@ class AttractionTag(Base):
 
 # สร้างตารางทั้งหมดในฐานข้อมูล (ถ้ายังไม่มี)
 # หมายเหตุ: หากตารางมีอยู่แล้วและมีข้อมูลอยู่แล้ว การรัน create_all() จะไม่สร้างตารางซ้ำ
-# แต่หากมีการเปลี่ยนชื่อคอลัมน์ PK (เช่น id -> user_id) และคุณต้องการให้ SQLAlchemy สร้างตารางใหม่
-# คุณอาจต้องลบตารางเก่าใน DB ก่อน หรือใช้ migration tool เช่น Alembic
+# และจะไม่เพิ่มคอลัมน์ใหม่ที่เพิ่มเข้ามาในโมเดล SQLAlchemy
+# หากคุณพบข้อผิดพลาด "UndefinedColumn" หลังจากรันสคริปต์
+# อาจจำเป็นต้องลบตารางที่มีปัญหาในฐานข้อมูลของคุณก่อน (เช่น DROP TABLE "User" CASCADE;)
+# เพื่อให้ SQLAlchemy สร้างตารางขึ้นมาใหม่พร้อม schema ที่ถูกต้อง
 Base.metadata.create_all(bind=engine)
 
 # --- ฟังก์ชันสำหรับดึงข้อมูลจาก API ---
@@ -466,6 +468,11 @@ if __name__ == "__main__":
     if mock_attractions_data and all_user_ids and category_name_to_id and tag_name_to_id:
         save_attractions_and_related_data(mock_attractions_data, all_user_ids, category_name_to_id, tag_name_to_id)
     else:
+        print("ไม่สามารถบันทึกข้อมูลสถานที่ได้: ข้อมูลไม่ครบถ้วน (สถานที่, ผู้ใช้, หมวดหมู่, แท็ก)")
+
+    # 5. ดึงและแสดงข้อมูลทั้งหมดจากฐานข้อมูลเพื่อตรวจสอบ
+    get_and_display_data()
+
         print("ไม่สามารถบันทึกข้อมูลสถานที่ได้: ข้อมูลไม่ครบถ้วน (สถานที่, ผู้ใช้, หมวดหมู่, แท็ก)")
 
     # 5. ดึงและแสดงข้อมูลทั้งหมดจากฐานข้อมูลเพื่อตรวจสอบ
