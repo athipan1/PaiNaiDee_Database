@@ -1,0 +1,12 @@
+name: painaidee_env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - sqlalchemy
+  - pandas
+  - numpy
+  - pip:
+      - psycopg2-binary
