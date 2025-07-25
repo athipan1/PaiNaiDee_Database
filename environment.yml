@@ -9,5 +9,6 @@ dependencies:
   - sqlalchemy
   - pandas
   - numpy
+  - httpx
   - pip:
       - psycopg2-binary
