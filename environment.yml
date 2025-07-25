@@ -3,10 +3,12 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.11
+  - python=3.10
   - pip
   - sqlalchemy
   - pandas
   - numpy
-  - pip:
-      - psycopg2-binary
+  - fastapi
+  - uvicorn
+  - httpx
+  - psycopg2
