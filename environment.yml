@@ -11,3 +11,4 @@ dependencies:
   - numpy
   - pip:
       - psycopg2-binary
+      - httpx
