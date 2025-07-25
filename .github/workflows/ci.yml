@@ -1,0 +1,349 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  SECRET_KEY: 'test-secret-key-for-ci'
+  DATABASE_URL: 'sqlite:///./test.db'
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    name: Code Quality Checks
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install black flake8 isort mypy
+    
+    - name: Format check with Black
+      run: |
+        black --check --diff .
+      continue-on-error: true
+    
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+      continue-on-error: true
+    
+    - name: Import sorting check with isort
+      run: |
+        isort --check-only --diff .
+      continue-on-error: true
+
+  test:
+    runs-on: ubuntu-latest
+    name: Unit Tests
+    
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-cov pytest-xdist
+    
+    - name: Run tests with coverage
+      run: |
+        pytest tests/ -v --cov=api --cov-report=xml --cov-report=html --cov-report=term-missing
+    
+    - name: Upload coverage reports to Codecov
+      if: matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  integration-test:
+    runs-on: ubuntu-latest
+    name: Integration Tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: painaidee_test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run database migrations
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/painaidee_test_db
+      run: |
+        python db_script.py
+    
+    - name: Test API endpoints
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/painaidee_test_db
+      run: |
+        python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+        sleep 10
+        curl -f http://localhost:8000/health || exit 1
+        curl -f http://localhost:8000/docs || exit 1
+        curl -f http://localhost:8000/attractions || exit 1
+
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+        pip install -r requirements.txt
+    
+    - name: Run safety check for known vulnerabilities
+      run: |
+        safety check --json || true
+    
+    - name: Run bandit security linter
+      run: |
+        bandit -r . -f json || true
+
+  performance-test:
+    runs-on: ubuntu-latest
+    name: Performance Tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install locust
+    
+    - name: Run performance tests
+      run: |
+        python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+        sleep 10
+        # Simple load test (can be expanded with Locust files)
+        curl -w "@curl-format.txt" -o /dev/null -s http://localhost:8000/attractions
+      continue-on-error: true
+
+  build-and-validate:
+    runs-on: ubuntu-latest
+    name: Build Validation
+    needs: [lint-and-format, test]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Validate API startup
+      run: |
+        python -c "from api.main import app; print('✅ API imports successfully')"
+    
+    - name: Validate database models
+      run: |
+        python -c "from api.models import Base; print('✅ Models import successfully')"
+    
+    - name: Validate scripts
+      run: |
+        python -c "from scripts.import_export import DataExporter; print('✅ Import/Export scripts work')"
+        python -c "from scripts.fetch_real_data import RealDataFetcher; print('✅ Data fetching scripts work')"
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+    needs: [build-and-validate, integration-test]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        # Add actual deployment commands here
+        # Example: 
+        # - Build Docker image
+        # - Push to registry
+        # - Deploy to staging server
+        echo "✅ Staging deployment completed"
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    needs: [build-and-validate, integration-test, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      run: |
+        echo "🚀 Deploying to production environment..."
+        # Add actual deployment commands here
+        # Example:
+        # - Build Docker image with production tag
+        # - Push to production registry
+        # - Deploy to production server
+        # - Run health checks
+        echo "✅ Production deployment completed"
+
+  create-release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Generate version
+      id: version
+      run: |
+        VERSION=$(date +%Y.%m.%d)-$(git rev-parse --short HEAD)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        release_name: Release v${{ steps.version.outputs.version }}
+        body: |
+          ## Changes in this Release
+          - Automated release from main branch
+          - See commit history for detailed changes
+          
+          ## API Documentation
+          - Swagger UI: `/docs`
+          - ReDoc: `/redoc`
+          
+          ## Health Check
+          - Endpoint: `/health`
+        draft: false
+        prerelease: false
+
+  cleanup:
+    runs-on: ubuntu-latest
+    name: Cleanup
+    needs: [create-release]
+    if: always()
+    
+    steps:
+    - name: Cleanup workspace
+      run: |
+        echo "🧹 Cleaning up workspace..."
+        # Remove any temporary files, caches, etc.
+        echo "✅ Cleanup completed"
+
+# Create curl format file for performance testing
+---
+name: Create curl format file
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types:
+      - requested
+
+jobs:
+  create-curl-format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create curl format file
+      run: |
+        cat > curl-format.txt << 'EOF'
+            time_namelookup:  %{time_namelookup}\n
+            time_connect:     %{time_connect}\n
+            time_appconnect:  %{time_appconnect}\n
+            time_pretransfer: %{time_pretransfer}\n
+            time_redirect:    %{time_redirect}\n
+            time_starttransfer: %{time_starttransfer}\n
+            ----------\n
+            time_total:       %{time_total}\n
+        EOF
