@@ -8,5 +8,7 @@ dependencies:
   - sqlalchemy
   - pandas
   - numpy
+  - fastapi
+  - httpx
   - pip:
       - psycopg2-binary
