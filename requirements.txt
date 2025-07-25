@@ -6,3 +6,5 @@ pandas
 python-jose
 pytest
 requests
+httpx
+flake8

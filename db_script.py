@@ -8,14 +8,16 @@ import datetime # สำหรับสร้างวันที่/เวล�
 import hashlib # สำหรับ hash รหัสผ่านจำลอง
 
 # กำหนดค่าการเชื่อมต่อฐานข้อมูล PostgreSQL
-DB_USER = "postgres"
-DB_PASSWORD = "Got0896177698"
-DB_HOST = "localhost"  # หรือ "db" ถ้าใช้ใน Docker
-DB_PORT = "5432"
-DB_NAME = "painaidee_db"
+import os
+
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "your_password_here")
+DB_HOST = os.getenv("DB_HOST", "localhost")  # หรือ "db" ถ้าใช้ใน Docker
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "painaidee_db")
 
 # สร้าง URL การเชื่อมต่อฐานข้อมูล
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = os.getenv("DATABASE_URL", f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
 # สร้าง Engine สำหรับเชื่อมต่อฐานข้อมูล
 engine = create_engine(DATABASE_URL)

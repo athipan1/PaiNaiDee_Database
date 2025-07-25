@@ -4,6 +4,7 @@ from sqlalchemy.sql import func
 
 Base = declarative_base()
 
+
 class User(Base):
     __tablename__ = "User"
     user_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -16,6 +17,7 @@ class User(Base):
     reviews = relationship("Review", back_populates="user")
     favorites = relationship("Favorite", back_populates="user")
 
+
 class Category(Base):
     __tablename__ = "Category"
     category_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -25,12 +27,14 @@ class Category(Base):
 
     attractions = relationship("Attraction", back_populates="category_obj")
 
+
 class Tag(Base):
     __tablename__ = "Tag"
     tag_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
 
     attraction_tags = relationship("AttractionTag", back_populates="tag")
+
 
 class Attraction(Base):
     __tablename__ = "attractions"
@@ -55,6 +59,7 @@ class Attraction(Base):
     favorites = relationship("Favorite", back_populates="attraction")
     attraction_tags = relationship("AttractionTag", back_populates="attraction")
 
+
 class Image(Base):
     __tablename__ = "Image"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -63,6 +68,7 @@ class Image(Base):
     caption = Column(String)
 
     attraction = relationship("Attraction", back_populates="images")
+
 
 class Review(Base):
     __tablename__ = "Review"
@@ -76,6 +82,7 @@ class Review(Base):
     attraction = relationship("Attraction", back_populates="reviews")
     user = relationship("User", back_populates="reviews")
 
+
 class Favorite(Base):
     __tablename__ = "Favorite"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -85,6 +92,7 @@ class Favorite(Base):
 
     user = relationship("User", back_populates="favorites")
     attraction = relationship("Attraction", back_populates="favorites")
+
 
 class AttractionTag(Base):
     __tablename__ = "attraction_tags"

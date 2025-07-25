@@ -4,10 +4,12 @@ from jose import jwt, JWTError
 from .models import User
 from sqlalchemy.orm import Session
 from .deps import get_db
+import os
 
-SECRET_KEY = "changeme"
+SECRET_KEY = os.getenv("SECRET_KEY", "change-this-in-production-use-long-random-string")
 ALGORITHM = "HS256"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
