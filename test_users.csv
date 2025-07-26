@@ -1,0 +1,2 @@
+user_id,username,email,password_hash,avatar_url,role
+1,testuser,test@example.com,hashed_password,,user
