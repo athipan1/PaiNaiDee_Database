@@ -1,5 +1,5 @@
 import pandas as pd
-from db_script import SessionLocal, User, Attraction
+from db_script import SessionLocal, User
 
 
 def export_users_csv(filename="users.csv"):

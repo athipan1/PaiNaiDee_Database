@@ -74,7 +74,8 @@ jobs:
         python -c "
         import os
         os.environ['DATABASE_URL'] = '$DATABASE_URL'
-        from api.models import Base, engine
+        from api.models import Base
+        from api.deps import engine
         Base.metadata.create_all(bind=engine)
         print('Database tables created successfully')
         "
@@ -144,6 +145,13 @@ jobs:
       run: |
         alembic upgrade head
 
+    - name: Wait for PostgreSQL to be ready
+      run: |
+        until pg_isready -h localhost -p 5432 -U ${{ env.POSTGRES_USER }}; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+
     - name: Test data population script
       env:
         DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
@@ -151,12 +159,20 @@ jobs:
         # Test the data population script in a safe way
         python -c "
         import sys
+        import os
         sys.path.append('.')
-        # Mock the database connection to test script validity
+        # Set environment variable for the script
+        os.environ['DATABASE_URL'] = '$DATABASE_URL'
         print('Testing db_script.py syntax and imports...')
         try:
+            # First test if we can compile the script without running it
+            with open('db_script.py', 'r') as f:
+                compile(f.read(), 'db_script.py', 'exec')
+            print('✅ db_script.py syntax is valid')
+            
+            # If syntax is good, test import (this will connect to DB)
             import db_script
-            print('✅ db_script.py is syntactically valid')
+            print('✅ db_script.py imported successfully')
         except ImportError as e:
             print(f'⚠️  Import warning: {e}')
         except Exception as e:
