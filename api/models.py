@@ -8,10 +8,18 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     UniqueConstraint,
+    create_engine,
 )
 from sqlalchemy.sql import func
+import os
 
 Base = declarative_base()
+
+# Import engine for database setup - used by CI/CD workflows
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://postgres:Got0896177698@localhost:5432/painaidee_db"
+)
+engine = create_engine(DATABASE_URL)
 
 
 class User(Base):

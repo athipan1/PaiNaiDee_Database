@@ -173,13 +173,7 @@ class AttractionTag(Base):
     tag = relationship("Tag", back_populates="attraction_tags")
 
 
-# สร้างตารางทั้งหมดในฐานข้อมูล (ถ้ายังไม่มี)
-# หมายเหตุ: หากตารางมีอยู่แล้วและมีข้อมูลอยู่แล้ว การรัน create_all() จะไม่สร้างตารางซ้ำ
-# และจะไม่เพิ่มคอลัมน์ใหม่ที่เพิ่มเข้ามาในโมเดล SQLAlchemy
-# หากคุณพบข้อผิดพลาด "UndefinedColumn" หลังจากรันสคริปต์
-# อาจจำเป็นต้องลบตารางที่มีปัญหาในฐานข้อมูลของคุณก่อน (เช่น DROP TABLE "User" CASCADE;)
-# เพื่อให้ SQLAlchemy สร้างตารางขึ้นมาใหม่พร้อม schema ที่ถูกต้อง
-Base.metadata.create_all(bind=engine)
+# Table creation will be done in main execution block to avoid issues during import
 
 # --- ฟังก์ชันสำหรับดึงข้อมูลจาก API ---
 
@@ -523,6 +517,14 @@ def get_and_display_data():
 
 # --- Main Execution Logic ---
 if __name__ == "__main__":
+    # สร้างตารางทั้งหมดในฐานข้อมูล (ถ้ายังไม่มี)
+    # หมายเหตุ: หากตารางมีอยู่แล้วและมีข้อมูลอยู่แล้ว การรัน create_all() จะไม่สร้างตารางซ้ำ
+    # และจะไม่เพิ่มคอลัมน์ใหม่ที่เพิ่มเข้ามาในโมเดล SQLAlchemy
+    # หากคุณพบข้อผิดพลาด "UndefinedColumn" หลังจากรันสคริปต์
+    # อาจจำเป็นต้องลบตารางที่มีปัญหาในฐานข้อมูลของคุณก่อน (เช่น DROP TABLE "User" CASCADE;)
+    # เพื่อให้ SQLAlchemy สร้างตารางขึ้นมาใหม่พร้อม schema ที่ถูกต้อง
+    Base.metadata.create_all(bind=engine)
+
     # URL ตัวอย่างที่ใช้งานได้จริง
     API_URL_USERS = "https://jsonplaceholder.typicode.com/users"
     API_URL_POSTS = "https://jsonplaceholder.typicode.com/posts"
