@@ -69,7 +69,14 @@ jobs:
     - name: Set up database
       env:
         DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+        PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
       run: |
+        # Wait for PostgreSQL to be fully ready
+        sleep 5
+        
+        # Create any additional roles if needed (the postgres user already exists)
+        psql -h localhost -U ${{ env.POSTGRES_USER }} -d ${{ env.POSTGRES_DB }} -c "SELECT 1" || exit 1
+        
         # Initialize database schema
         python -c "
         import os

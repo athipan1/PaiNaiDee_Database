@@ -1,9 +1,6 @@
-from fastapi.testclient import TestClient
-from api.main import app
-
-client = TestClient(app)
-
-
-def test_root():
-    r = client.get("/attractions")
-    assert r.status_code == 200
+def test_root(test_client):
+    """Test the root attractions endpoint"""
+    response = test_client.get("/attractions")
+    assert response.status_code == 200
+    # Should return empty list if no attractions exist
+    assert isinstance(response.json(), list)
