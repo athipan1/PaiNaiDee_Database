@@ -13,7 +13,7 @@ class DatabaseConfig:
     def __init__(self):
         self.database_url = os.getenv(
             "DATABASE_URL",
-            "postgresql://postgres:Got0896177698@localhost:5432/painaidee_db",
+            "postgresql://postgres:postgres@localhost:5432/painaidee_db",
         )
         self.echo = os.getenv("DB_ECHO", "false").lower() == "true"
 

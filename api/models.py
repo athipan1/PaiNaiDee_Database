@@ -8,10 +8,18 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     UniqueConstraint,
+    create_engine,
 )
 from sqlalchemy.sql import func
+import os
 
 Base = declarative_base()
+
+# Database connection for migrations and table creation
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/painaidee_db"
+)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 
 class User(Base):

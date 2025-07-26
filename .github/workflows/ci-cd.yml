@@ -70,13 +70,19 @@ jobs:
       env:
         DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
       run: |
-        # Initialize database schema
+        # Initialize database schema using api.models
         python -c "
         import os
+        import sys
+        sys.path.append('.')
         os.environ['DATABASE_URL'] = '$DATABASE_URL'
         from api.models import Base, engine
-        Base.metadata.create_all(bind=engine)
-        print('Database tables created successfully')
+        try:
+            Base.metadata.create_all(bind=engine)
+            print('✅ Database tables created successfully')
+        except Exception as e:
+            print(f'❌ Error creating tables: {e}')
+            sys.exit(1)
         "
 
     - name: Run tests
@@ -131,10 +137,12 @@ jobs:
     - name: Check if migrations directory exists
       id: check_migrations
       run: |
-        if [ -d "migrations" ]; then
+        if [ -d "migrations/versions" ] && [ "$(ls -A migrations/versions)" ]; then
           echo "migrations_exist=true" >> $GITHUB_OUTPUT
+          echo "✅ Migration versions found"
         else
           echo "migrations_exist=false" >> $GITHUB_OUTPUT
+          echo "⚠️  No migration versions found"
         fi
 
     - name: Run database migrations (if migrations exist)
@@ -142,23 +150,58 @@ jobs:
       env:
         DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
       run: |
+        echo "🔄 Running database migrations..."
         alembic upgrade head
+        echo "✅ Database migrations completed"
+
+    - name: Initialize database without migrations (if no migrations exist)
+      if: steps.check_migrations.outputs.migrations_exist == 'false'
+      env:
+        DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+      run: |
+        echo "🔄 Creating tables directly from models..."
+        python -c "
+        import os
+        import sys
+        sys.path.append('.')
+        os.environ['DATABASE_URL'] = '$DATABASE_URL'
+        from api.models import Base, engine
+        try:
+            Base.metadata.create_all(bind=engine)
+            print('✅ Database tables created successfully')
+        except Exception as e:
+            print(f'❌ Error creating tables: {e}')
+            sys.exit(1)
+        "
 
     - name: Test data population script
       env:
         DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
       run: |
-        # Test the data population script in a safe way
+        # Test the data population script syntax and imports
         python -c "
         import sys
+        import os
         sys.path.append('.')
-        # Mock the database connection to test script validity
-        print('Testing db_script.py syntax and imports...')
+        os.environ['DATABASE_URL'] = '$DATABASE_URL'
+        print('🔍 Testing db_script.py syntax and imports...')
         try:
             import db_script
             print('✅ db_script.py is syntactically valid')
+            # Test that main function exists
+            if hasattr(db_script, 'main'):
+                print('✅ main() function found')
+            else:
+                print('⚠️  main() function not found')
+            # Test database connection without running full script
+            if hasattr(db_script, 'check_database_connection'):
+                if db_script.check_database_connection():
+                    print('✅ Database connection test passed')
+                else:
+                    print('⚠️  Database connection test failed')
         except ImportError as e:
-            print(f'⚠️  Import warning: {e}')
+            print(f'❌ Import error: {e}')
+            sys.exit(1)
         except Exception as e:
             print(f'❌ Error in db_script.py: {e}')
             sys.exit(1)
