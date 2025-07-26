@@ -6,3 +6,8 @@ pandas
 python-jose
 pytest
 requests
+httpx
+pytest-cov
+alembic
+flake8
+black

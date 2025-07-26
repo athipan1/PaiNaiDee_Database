@@ -1,8 +1,18 @@
 from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    DateTime,
+    ForeignKey,
+    UniqueConstraint,
+)
 from sqlalchemy.sql import func
 
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = "User"
@@ -16,6 +26,7 @@ class User(Base):
     reviews = relationship("Review", back_populates="user")
     favorites = relationship("Favorite", back_populates="user")
 
+
 class Category(Base):
     __tablename__ = "Category"
     category_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -25,12 +36,14 @@ class Category(Base):
 
     attractions = relationship("Attraction", back_populates="category_obj")
 
+
 class Tag(Base):
     __tablename__ = "Tag"
     tag_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
 
     attraction_tags = relationship("AttractionTag", back_populates="tag")
+
 
 class Attraction(Base):
     __tablename__ = "attractions"
@@ -55,6 +68,7 @@ class Attraction(Base):
     favorites = relationship("Favorite", back_populates="attraction")
     attraction_tags = relationship("AttractionTag", back_populates="attraction")
 
+
 class Image(Base):
     __tablename__ = "Image"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -63,6 +77,7 @@ class Image(Base):
     caption = Column(String)
 
     attraction = relationship("Attraction", back_populates="images")
+
 
 class Review(Base):
     __tablename__ = "Review"
@@ -76,21 +91,27 @@ class Review(Base):
     attraction = relationship("Attraction", back_populates="reviews")
     user = relationship("User", back_populates="reviews")
 
+
 class Favorite(Base):
     __tablename__ = "Favorite"
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("User.user_id"), nullable=False)
     attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
-    __table_args__ = (UniqueConstraint('user_id', 'attraction_id', name='_user_attraction_uc'),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "attraction_id", name="_user_attraction_uc"),
+    )
 
     user = relationship("User", back_populates="favorites")
     attraction = relationship("Attraction", back_populates="favorites")
+
 
 class AttractionTag(Base):
     __tablename__ = "attraction_tags"
     attraction_id = Column(Integer, ForeignKey("attractions.id"), primary_key=True)
     tag_id = Column(Integer, ForeignKey("Tag.tag_id"), primary_key=True)
-    __table_args__ = (UniqueConstraint('attraction_id', 'tag_id', name='_attraction_tag_uc'),)
+    __table_args__ = (
+        UniqueConstraint("attraction_id", "tag_id", name="_attraction_tag_uc"),
+    )
 
     attraction = relationship("Attraction", back_populates="attraction_tags")
     tag = relationship("Tag", back_populates="attraction_tags")
