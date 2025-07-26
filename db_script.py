@@ -24,11 +24,11 @@ Base = declarative_base()
 # สร้าง SessionLocal สำหรับการจัดการ session ฐานข้อมูล
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# --- SQLAlchemy Models ตาม ER Diagram (ปรับปรุงชื่อตารางและ PK ให้ตรงกับ Schema ของคุณ) ---
+# --- SQLAlchemy Models ตาม ER Diagram (ใช้ชื่อตารางเป็น lowercase เพื่อความสอดคล้อง) ---
 
 class User(Base):
-    __tablename__ = "User" # เปลี่ยนจาก "users" เป็น "User"
-    user_id = Column(Integer, primary_key=True, autoincrement=True) # แก้ไข: เปลี่ยน 'id' เป็น 'user_id'
+    __tablename__ = "users" # เปลี่ยนเป็น "users" เพื่อให้สอดคล้องกับ API
+    user_id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
@@ -39,8 +39,8 @@ class User(Base):
     favorites = relationship("Favorite", back_populates="user")
 
 class Category(Base):
-    __tablename__ = "Category" # เปลี่ยนจาก "categories" เป็น "Category"
-    category_id = Column(Integer, primary_key=True, autoincrement=True) # แก้ไข: เปลี่ยน 'id' เป็น 'category_id'
+    __tablename__ = "categories" # เปลี่ยนเป็น "categories" เพื่อให้สอดคล้องกับ API
+    category_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
     description = Column(Text)
     icon_url = Column(String)
@@ -48,15 +48,15 @@ class Category(Base):
     attractions = relationship("Attraction", back_populates="category_obj")
 
 class Tag(Base):
-    __tablename__ = "Tag" # เปลี่ยนจาก "tags" เป็น "Tag"
-    tag_id = Column(Integer, primary_key=True, autoincrement=True) # แก้ไข: เปลี่ยน 'id' เป็น 'tag_id'
+    __tablename__ = "tags" # เปลี่ยนเป็น "tags" เพื่อให้สอดคล้องกับ API
+    tag_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
 
     attraction_tags = relationship("AttractionTag", back_populates="tag")
 
 class Attraction(Base):
     __tablename__ = "attractions" # ชื่อนี้ตรงกับ schema ของคุณแล้ว
-    id = Column(Integer, primary_key=True, autoincrement=True) # รักษานามสกุล 'id' เนื่องจาก schema แสดง 'attractions_id_seq'
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False, unique=True)
     description = Column(Text)
     address = Column(String)
@@ -64,7 +64,7 @@ class Attraction(Base):
     district = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)
-    category_id = Column(Integer, ForeignKey("Category.category_id")) # อัปเดต FK ให้ชี้ไปที่ 'Category.category_id'
+    category_id = Column(Integer, ForeignKey("categories.category_id")) # อัปเดต FK ให้ชี้ไปที่ตาราง categories
     opening_hours = Column(String)
     entrance_fee = Column(String)
     contact_phone = Column(String)
@@ -78,19 +78,19 @@ class Attraction(Base):
     attraction_tags = relationship("AttractionTag", back_populates="attraction")
 
 class Image(Base):
-    __tablename__ = "Image" # เปลี่ยนจาก "images" เป็น "Image"
-    id = Column(Integer, primary_key=True, autoincrement=True) # รักษานามสกุล 'id' เนื่องจาก schema แสดง 'Image_image_id_seq'
-    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False) # ชื่อตาราง "attractions" ตรงแล้ว
+    __tablename__ = "images" # เปลี่ยนเป็น "images" เพื่อให้สอดคล้องกับ API
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
     image_url = Column(String, nullable=False)
     caption = Column(String)
 
     attraction = relationship("Attraction", back_populates="images")
 
 class Review(Base):
-    __tablename__ = "Review" # เปลี่ยนจาก "reviews" เป็น "Review"
-    id = Column(Integer, primary_key=True, autoincrement=True) # รักษานามสกุล 'id' เนื่องจาก schema แสดง 'Review_review_id_seq'
-    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False) # ชื่อตาราง "attractions" ตรงแล้ว
-    user_id = Column(Integer, ForeignKey("User.user_id"), nullable=False) # อัปเดต FK ให้ชี้ไปที่ 'User.user_id'
+    __tablename__ = "reviews" # เปลี่ยนเป็น "reviews" เพื่อให้สอดคล้องกับ API
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False) # อัปเดต FK ให้ชี้ไปที่ตาราง users
     rating = Column(Integer, nullable=False) # เช่น 1-5 ดาว
     comment = Column(Text)
     created_at = Column(DateTime, server_default=func.now())
@@ -99,10 +99,10 @@ class Review(Base):
     user = relationship("User", back_populates="reviews")
 
 class Favorite(Base):
-    __tablename__ = "Favorite" # เปลี่ยนจาก "favorites" เป็น "Favorite"
-    id = Column(Integer, primary_key=True, autoincrement=True) # รักษานามสกุล 'id' เนื่องจาก schema แสดง 'Favorite_favorite_id_seq'
-    user_id = Column(Integer, ForeignKey("User.user_id"), nullable=False) # อัปเดต FK ให้ชี้ไปที่ 'User.user_id'
-    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False) # ชื่อตาราง "attractions" ตรงแล้ว
+    __tablename__ = "favorites" # เปลี่ยนเป็น "favorites" เพื่อให้สอดคล้องกับ API
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False) # อัปเดต FK ให้ชี้ไปที่ตาราง users
+    attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
 
     __table_args__ = (UniqueConstraint('user_id', 'attraction_id', name='_user_attraction_uc'),) # ป้องกันการบันทึกรายการโปรดซ้ำ
 
@@ -111,8 +111,8 @@ class Favorite(Base):
 
 class AttractionTag(Base):
     __tablename__ = "attraction_tags" # ชื่อนี้ตรงกับ schema ของคุณแล้ว
-    attraction_id = Column(Integer, ForeignKey("attractions.id"), primary_key=True) # ชื่อตาราง "attractions" ตรงแล้ว
-    tag_id = Column(Integer, ForeignKey("Tag.tag_id"), primary_key=True) # อัปเดต FK ให้ชี้ไปที่ 'Tag.tag_id'
+    attraction_id = Column(Integer, ForeignKey("attractions.id"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.tag_id"), primary_key=True) # อัปเดต FK ให้ชี้ไปที่ตาราง tags
 
     __table_args__ = (UniqueConstraint('attraction_id', 'tag_id', name='_attraction_tag_uc'),) # ป้องกันแท็กซ้ำสำหรับสถานที่เดียวกัน
 
@@ -125,7 +125,15 @@ class AttractionTag(Base):
 # หากคุณพบข้อผิดพลาด "UndefinedColumn" หลังจากรันสคริปต์
 # อาจจำเป็นต้องลบตารางที่มีปัญหาในฐานข้อมูลของคุณก่อน (เช่น DROP TABLE "User" CASCADE;)
 # เพื่อให้ SQLAlchemy สร้างตารางขึ้นมาใหม่พร้อม schema ที่ถูกต้อง
-Base.metadata.create_all(bind=engine)
+
+def create_tables():
+    """สร้างตารางทั้งหมดในฐานข้อมูล"""
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("สร้างตารางในฐานข้อมูลสำเร็จ")
+    except Exception as e:
+        print(f"ข้อผิดพลาดในการสร้างตาราง: {e}")
+        print("โปรดตรวจสอบการเชื่อมต่อฐานข้อมูล")
 
 # --- ฟังก์ชันสำหรับดึงข้อมูลจาก API ---
 
@@ -419,6 +427,9 @@ def get_and_display_data():
 
 # --- Main Execution Logic ---
 if __name__ == "__main__":
+    # สร้างตารางในฐานข้อมูลก่อน
+    create_tables()
+    
     # URL ตัวอย่างที่ใช้งานได้จริง
     API_URL_USERS = "https://jsonplaceholder.typicode.com/users"
     API_URL_POSTS = "https://jsonplaceholder.typicode.com/posts"

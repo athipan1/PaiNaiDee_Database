@@ -1,9 +1,13 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from .models import User
+try:
+    from .models import User
+    from .deps import get_db
+except ImportError:
+    from models import User
+    from deps import get_db
 from sqlalchemy.orm import Session
-from .deps import get_db
 
 SECRET_KEY = "changeme"
 ALGORITHM = "HS256"

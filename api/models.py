@@ -5,7 +5,7 @@ from sqlalchemy.sql import func
 Base = declarative_base()
 
 class User(Base):
-    __tablename__ = "User"
+    __tablename__ = "users"
     user_id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
@@ -17,7 +17,7 @@ class User(Base):
     favorites = relationship("Favorite", back_populates="user")
 
 class Category(Base):
-    __tablename__ = "Category"
+    __tablename__ = "categories"
     category_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
     description = Column(Text)
@@ -26,7 +26,7 @@ class Category(Base):
     attractions = relationship("Attraction", back_populates="category_obj")
 
 class Tag(Base):
-    __tablename__ = "Tag"
+    __tablename__ = "tags"
     tag_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
 
@@ -42,7 +42,7 @@ class Attraction(Base):
     district = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)
-    category_id = Column(Integer, ForeignKey("Category.category_id"))
+    category_id = Column(Integer, ForeignKey("categories.category_id"))
     opening_hours = Column(String)
     entrance_fee = Column(String)
     contact_phone = Column(String)
@@ -56,7 +56,7 @@ class Attraction(Base):
     attraction_tags = relationship("AttractionTag", back_populates="attraction")
 
 class Image(Base):
-    __tablename__ = "Image"
+    __tablename__ = "images"
     id = Column(Integer, primary_key=True, autoincrement=True)
     attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
     image_url = Column(String, nullable=False)
@@ -65,10 +65,10 @@ class Image(Base):
     attraction = relationship("Attraction", back_populates="images")
 
 class Review(Base):
-    __tablename__ = "Review"
+    __tablename__ = "reviews"
     id = Column(Integer, primary_key=True, autoincrement=True)
     attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("User.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     rating = Column(Integer, nullable=False)
     comment = Column(Text)
     created_at = Column(DateTime, server_default=func.now())
@@ -77,9 +77,9 @@ class Review(Base):
     user = relationship("User", back_populates="reviews")
 
 class Favorite(Base):
-    __tablename__ = "Favorite"
+    __tablename__ = "favorites"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("User.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     attraction_id = Column(Integer, ForeignKey("attractions.id"), nullable=False)
     __table_args__ = (UniqueConstraint('user_id', 'attraction_id', name='_user_attraction_uc'),)
 
@@ -89,7 +89,7 @@ class Favorite(Base):
 class AttractionTag(Base):
     __tablename__ = "attraction_tags"
     attraction_id = Column(Integer, ForeignKey("attractions.id"), primary_key=True)
-    tag_id = Column(Integer, ForeignKey("Tag.tag_id"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.tag_id"), primary_key=True)
     __table_args__ = (UniqueConstraint('attraction_id', 'tag_id', name='_attraction_tag_uc'),)
 
     attraction = relationship("Attraction", back_populates="attraction_tags")

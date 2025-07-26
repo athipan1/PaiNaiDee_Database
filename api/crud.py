@@ -1,4 +1,7 @@
-from .models import Attraction
+try:
+    from .models import Attraction
+except ImportError:
+    from models import Attraction
 from sqlalchemy.orm import Session
 
 def get_attractions(db: Session, skip=0, limit=20):
