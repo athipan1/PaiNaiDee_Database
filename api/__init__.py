@@ -1,0 +1,3 @@
+"""
+PaiNaiDee API module
+"""

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from . import models, schemas, crud, recommender
+from . import schemas, crud, recommender
 from .deps import get_db
 
 app = FastAPI(title="PaiNaiDee API")

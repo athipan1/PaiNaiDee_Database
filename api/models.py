@@ -13,6 +13,13 @@ from sqlalchemy.sql import func
 
 Base = declarative_base()
 
+# Import engine when needed for CI/CD setup
+try:
+    from .deps import engine
+except ImportError:
+    # In case deps is not available during some imports
+    engine = None
+
 
 class User(Base):
     __tablename__ = "User"
